@@ -45,7 +45,7 @@ export default function ManagerLayout({ children }: LayoutProps) {
 
   {/* المحتوى */}
   <div className="flex-1 flex flex-col h-screen lg:ml-64 transition-all duration-300">
-    <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} title="Manager Dashboard" userName="Banan Wael" />
+    <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} title="Manager Dashboard" />
     <main className="flex-1 overflow-y-auto p-6">{children}</main>
   </div>
 </div>
