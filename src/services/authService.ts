@@ -1,6 +1,5 @@
 // // services/authService.ts
 import api from '@/lib/api';
-
 interface LoginResponse {
   token: string;
   message?: string;

@@ -8,11 +8,11 @@ const profileTabs = [
 export default function ProfileNavbar() {
   return (
     <div>
-      <DynamicHeader
+      {/* <DynamicHeader
         title="Profile & Settings"
         subtitle="Manage your profile and pharmacy settings"
         tabs={profileTabs}
-      />
+      /> */}
     </div>
   );
 }

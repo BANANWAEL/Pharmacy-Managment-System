@@ -1,97 +1,3 @@
-// "use client";
-// import React, { useState } from 'react';
-// import { Package, Download, Layers } from 'lucide-react';
-
-// interface InventoryReportProps {
-//   onGenerate?: (data: { category: string; format: string }) => void;
-// }
-
-// const InventoryReport: React.FC<InventoryReportProps> = ({ onGenerate }) => {
-//   const [category, setCategory] = useState('All Categories');
-//   const [format, setFormat] = useState('Excel');
-
-//   const handleGenerate = () => {
-//     if (onGenerate) {
-//       onGenerate({ category, format });
-//     } else {
-//       console.log('Generate Inventory Report:', { category, format });
-//       alert(`Generating ${format} inventory report for ${category}`);
-//     }
-//   };
-
-//   return (
-//     <div className="bg-secondary rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-//       <div className="p-6">
-//         {/* Header */}
-//         <div className="flex items-start gap-3 mb-5">
-//           <div className="p-2 bg-mintgreen/10 rounded-lg shrink-0">
-//             <Package className="w-5 h-5 text-mintgreen" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-semibold text-primary-text">Inventory Report</h3>
-//             <p className="text-sm text-muted-text">Export current inventory status and stock levels</p>
-//           </div>
-//         </div>
-
-//         {/* Form Fields */}
-//         <div className="space-y-4">
-//           {/* Category */}
-//           <div>
-//             <label className="block text-sm font-medium text-primary-text mb-1.5">
-//               Category
-//             </label>
-//             <div className="relative">
-//               <Layers className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-text" />
-//               <select
-//                 value={category}
-//                 onChange={(e) => setCategory(e.target.value)}
-//                 className="w-full pl-10 pr-4 py-2 bg-background text-primary-text rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-mintgreen focus:ring-1 focus:ring-mintgreen transition-all text-sm appearance-none cursor-pointer"
-//               >
-//                 <option value="All Categories">All Categories</option>
-//                 <option value="Pain Relief">Pain Relief</option>
-//                 <option value="Antibiotics">Antibiotics</option>
-//                 <option value="Vitamins">Vitamins</option>
-//                 <option value="Diabetes">Diabetes</option>
-//                 <option value="Cardiovascular">Cardiovascular</option>
-//               </select>
-//             </div>
-//           </div>
-
-//           {/* Format */}
-//           <div>
-//             <label className="block text-sm font-medium text-primary-text mb-1.5">
-//               Format
-//             </label>
-//             <div className="relative">
-//               <Download className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-text" />
-//               <select
-//                 value={format}
-//                 onChange={(e) => setFormat(e.target.value)}
-//                 className="w-full pl-10 pr-4 py-2 bg-background text-primary-text rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-mintgreen focus:ring-1 focus:ring-mintgreen transition-all text-sm appearance-none cursor-pointer"
-//               >
-//                 <option value="Excel">Excel</option>
-//                 <option value="PDF">PDF</option>
-//                 <option value="CSV">CSV</option>
-//               </select>
-//             </div>
-//           </div>
-
-//           {/* Generate Button */}
-//           <button
-//             onClick={handleGenerate}
-//             className="w-full mt-2 px-4 py-2 bg-mintgreen text-inverse-text rounded-lg hover:opacity-90 transition-colors font-medium text-sm flex items-center justify-center gap-2"
-//           >
-//             <Download className="w-4 h-4" />
-//             Generate Inventory Report
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default InventoryReport;
-
 "use client";
 import React, { useState, useEffect } from "react";
 import { Package, Download, Layers } from "lucide-react";
@@ -126,11 +32,12 @@ const InventoryReport: React.FC<InventoryReportProps> = ({ onGenerate }) => {
   };
 
   const getFilteredMedicines = () => {
-    if (category === "All Categories") return medicines;
-    return medicines.filter((m: any) =>
-      m.batch_No?.toLowerCase().includes(category.toLowerCase())
-    );
-  };
+  if (category === "All Categories") return medicines;
+  return medicines.filter((m: any) => {
+    const status = getStatus(m.quantity_In_Stock ?? 0);
+    return status === category; // ✅ filter by status not batch_No
+  });
+};
 
   const handleGenerate = async () => {
     if (onGenerate) { onGenerate({ category, format }); return; }
