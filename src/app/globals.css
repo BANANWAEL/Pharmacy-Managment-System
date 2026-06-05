@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
+/*defult light*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* BACKGROUNDS */
+  --background: #f1f1f1; /* Main Page Background */
+  --secondary: #ffffff; /* Sidebar/Card Background (Was 'foreground') */
+  --manager-gray: rgb(183, 183, 185);
+  /* TEXT COLORS */
+  --primary-text: #616164; /* Main Dark Text (Was 'primarygray') */
+  --muted-text: #919797; /* Lighter Text (Was 'darkgray') */
+  --inverse-text: #ffffff; /* White text (for buttons/headers) */
+
+  --darkgray: #919797;
+
+  /* BRAND COLORS */
+  --mintgreen: #1d546c;
+
+  /* STATUS COLORS (Dark versions) */
+  --darkgreen: #34a853;
+  --darkblue: #5065f6;
+  --darkred: #f04b69;
+  --darkyellow: #ffdb45;
+
+  /* STATUS COLORS (Soft versions) */
+  --softgreen: #68ce8f;
+  --softblue: #a7b1f9;
+  --softred: #f8a5b4;
+  --softyellow: #ffed9f;
 }
 
+/* 1. CONFIGURATION ZONE (@theme) 
+   Map Tailwind class names to your CSS variables.
+   Now you can use `bg-background` or `text-mintgreen`.
+*/
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-mintgreen: var(--mintgreen);
+
+  --color-background: var(--background); /*main background*/
+  --color-secondary: var(--secondary); /*second background*/
+  --color-manager-gray: var(--manager-gray);
+
+  --color-primary-text: var(--primary-text); /*text main color*/
+  --color-muted-text: var(--muted-text);
+  --color-inverse-text: var(--inverse-text);
+
+  --color-darkgray: var(--darkgray);
+
+  --color-darkgreen: var(--darkgreen);
+  --color-softgreen: var(--softgreen);
+
+  --color-darkblue: var(--darkblue);
+  --color-softblue: var(--softblue);
+
+  --color-darkred: var(--darkred);
+  --color-softred: var(--softred);
+
+  --color-darkyellow: var(--darkyellow);
+  --color-softyellow: var(--softyellow);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* @media (prefers-color-scheme: dark) {
+  :root { */
+.dark {
+  /* BACKGROUNDS */
+  --background: #1e1e1e; /* Dark Grey Page */
+  --secondary: #292929; /* Slightly lighter Grey Cards */
+  --manager-gray: #242424;
+
+  /* TEXT COLORS - INVERTED FOR READABILITY */
+  --primary-text: #f1f1f1; /* Light Text (Essential for reading!) */
+  --muted-text: #a1a1aa;
+  --inverse-text: #000000; /* Black text (for light buttons) */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-background text-primary-text;
+}
+@layer base {
+  /* استهداف حالة الـ Autofill في كروم وإيدج */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    /* 1. دي الخدعة: بنعمل ضل داخلي كبير جداً بلون الـ secondary (الرمادي) عشان يغطي الأزرق */
+    -webkit-box-shadow: 0 0 0 30px var(--secondary) inset !important;
+
+    /* 2. بنجبر لون الكلام يبقى اللون الأساسي بتاعنا */
+    -webkit-text-fill-color: var(--primary-text) !important;
+
+    /* 3. بنمنع المتصفح من تغيير الخلفية تاني */
+    transition: background-color 5000s ease-in-out 0s;
+  }
 }
