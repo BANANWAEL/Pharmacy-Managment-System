@@ -2,8 +2,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://youssef5807-001-site1.ntempurl.com/api',
-  // withCredentials: true, // مهم جداً عشان يبعت الـ Cookie مع كل طلب
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 api.interceptors.request.use((config) => {
