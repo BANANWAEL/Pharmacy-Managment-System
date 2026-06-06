@@ -1,39 +1,48 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { X, Package, DollarSign, Calendar, ShoppingCart, User, Hash, Layers, Plus } from "lucide-react";
+import {
+  X,
+  Package,
+  DollarSign,
+  Calendar,
+  ShoppingCart,
+  User,
+  Hash,
+  Layers,
+  Plus,
+} from "lucide-react";
 import api from "@/lib/api";
 
 const Topbar = () => {
   const [isMedicineModalOpen, setIsMedicineModalOpen] = useState(false);
-  const [isOrderModalOpen, setIsOrderModalOpen]       = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // Medicine form
   const [medLoading, setMedLoading] = useState(false);
   const [medSuccess, setMedSuccess] = useState(false);
-  const [medError, setMedError]     = useState("");
+  const [medError, setMedError] = useState("");
   const [medForm, setMedForm] = useState({
-    medicine_Name:     "",
-    selling_Price:     "",
-    cost_Price:        "",
-    batch_No:          "",
+    medicine_Name: "",
+    selling_Price: "",
+    cost_Price: "",
+    batch_No: "",
     quantity_In_Stock: "",
-    expiry_Date:       "",
+    expiry_Date: "",
   });
 
   // Order form
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
-  const [orderError, setOrderError]     = useState("");
-  const [medicines, setMedicines]       = useState<any[]>([]);
-  const [clients, setClients]           = useState<any[]>([]);
-  const [profile, setProfile]           = useState<any>(null);
+  const [orderError, setOrderError] = useState("");
+  const [medicines, setMedicines] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
   const [orderForm, setOrderForm] = useState({
-    client_ID:   "",
+    client_ID: "",
     medicine_ID: "",
-    quantity:    "",
+    quantity: "",
   });
 
-  // Fetch medicines + clients + profile for order modal
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -45,6 +54,7 @@ const Topbar = () => {
         setMedicines(medRes.data);
         setClients(clientRes.data);
         setProfile(profileRes.data);
+        console.log("First client:", clientRes.data[0]); // 🔍 check keys
       } catch (err) {
         console.error("Failed to fetch data:", err);
       }
@@ -52,7 +62,6 @@ const Topbar = () => {
     fetchData();
   }, []);
 
-  // Medicine handlers
   const handleMedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMedForm({ ...medForm, [e.target.name]: e.target.value });
   };
@@ -62,8 +71,12 @@ const Topbar = () => {
     setMedSuccess(false);
     setMedError("");
     setMedForm({
-      medicine_Name: "", selling_Price: "", cost_Price: "",
-      batch_No: "", quantity_In_Stock: "", expiry_Date: "",
+      medicine_Name: "",
+      selling_Price: "",
+      cost_Price: "",
+      batch_No: "",
+      quantity_In_Stock: "",
+      expiry_Date: "",
     });
   };
 
@@ -73,12 +86,12 @@ const Topbar = () => {
     setMedError("");
     try {
       await api.post("/Medicines", {
-        medicine_Name:     medForm.medicine_Name,
-        selling_Price:     parseFloat(medForm.selling_Price),
-        cost_Price:        parseFloat(medForm.cost_Price),
-        batch_No:          medForm.batch_No,
+        medicine_Name: medForm.medicine_Name,
+        selling_Price: parseFloat(medForm.selling_Price),
+        cost_Price: parseFloat(medForm.cost_Price),
+        batch_No: medForm.batch_No,
         quantity_In_Stock: parseInt(medForm.quantity_In_Stock),
-        expiry_Date:       new Date(medForm.expiry_Date).toISOString(),
+        expiry_Date: new Date(medForm.expiry_Date).toISOString(),
       });
       setMedSuccess(true);
       setTimeout(() => closeMedicineModal(), 1500);
@@ -89,7 +102,6 @@ const Topbar = () => {
     }
   };
 
-  // Order handlers
   const closeOrderModal = () => {
     setIsOrderModalOpen(false);
     setOrderSuccess(false);
@@ -97,7 +109,9 @@ const Topbar = () => {
     setOrderForm({ client_ID: "", medicine_ID: "", quantity: "" });
   };
 
-  const handleOrderChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleOrderChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     setOrderForm({ ...orderForm, [e.target.name]: e.target.value });
   };
 
@@ -105,21 +119,45 @@ const Topbar = () => {
     e.preventDefault();
     setOrderLoading(true);
     setOrderError("");
+
+    // ✅ check quantity before sending
+    const selectedMedicine = medicines.find(
+      (m: any) => m.medicine_ID === parseInt(orderForm.medicine_ID),
+    );
+
+    if (
+      selectedMedicine &&
+      parseInt(orderForm.quantity) > selectedMedicine.quantity_In_Stock
+    ) {
+      setOrderError(
+        `Not enough stock. Only ${selectedMedicine.quantity_In_Stock} units available for ${selectedMedicine.medicine_Name}.`,
+      );
+      setOrderLoading(false);
+      return;
+    }
+
     try {
-      await api.post("/Orders", {
-        client_ID:   parseInt(orderForm.client_ID),
+      const payload = {
+        client_ID: parseInt(orderForm.client_ID),
         employee_ID: profile?.employee_ID,
+        orderDate: new Date().toISOString(),
         items: [
           {
             medicine_ID: parseInt(orderForm.medicine_ID),
-            quantity:    parseInt(orderForm.quantity),
+            quantity: parseInt(orderForm.quantity),
           },
         ],
-      });
+      };
+
+      await api.post("/Orders", payload);
       setOrderSuccess(true);
       setTimeout(() => closeOrderModal(), 1500);
     } catch (err: any) {
-      setOrderError(err.message || "Failed to create order.");
+      const errData = err.response?.data;
+      const errMsg = errData?.errors
+        ? Object.values(errData.errors).flat().join(", ")
+        : (errData?.title ?? err.message ?? "Failed to create order.");
+      setOrderError(errMsg);
     } finally {
       setOrderLoading(false);
     }
@@ -127,7 +165,6 @@ const Topbar = () => {
 
   return (
     <div className="bg-background p-6">
-      {/* Top Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
         <div>
           <h1 className="text-3xl font-bold text-primary-text">Dashboard</h1>
@@ -162,10 +199,17 @@ const Topbar = () => {
             <div className="p-8">
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-2xl font-black text-primary-text tracking-tight">Add New Product</h2>
-                  <p className="text-xs text-muted-text mt-1">Fill in the product details to add to inventory</p>
+                  <h2 className="text-2xl font-black text-primary-text tracking-tight">
+                    Add New Product
+                  </h2>
+                  <p className="text-xs text-muted-text mt-1">
+                    Fill in the product details to add to inventory
+                  </p>
                 </div>
-                <button onClick={closeMedicineModal} className="p-2 hover:bg-background rounded-full transition-colors">
+                <button
+                  onClick={closeMedicineModal}
+                  className="p-2 hover:bg-background rounded-full transition-colors"
+                >
                   <X size={20} className="text-muted-text" />
                 </button>
               </div>
@@ -175,94 +219,156 @@ const Topbar = () => {
                   <div className="w-16 h-16 bg-mintgreen/10 rounded-full flex items-center justify-center">
                     <span className="text-3xl text-mintgreen">✓</span>
                   </div>
-                  <p className="text-lg font-black text-primary-text">Product Added!</p>
-                  <p className="text-xs text-muted-text">Closing automatically...</p>
+                  <p className="text-lg font-black text-primary-text">
+                    Product Added!
+                  </p>
+                  <p className="text-xs text-muted-text">
+                    Closing automatically...
+                  </p>
                 </div>
               ) : (
                 <form className="space-y-4" onSubmit={handleMedSubmit}>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-primary-text px-1 uppercase">Product Name</label>
+                    <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                      Product Name
+                    </label>
                     <div className="relative">
-                      <Package className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                      <Package
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                        size={18}
+                      />
                       <input
-                        type="text" name="medicine_Name" value={medForm.medicine_Name}
-                        onChange={handleMedChange} placeholder="e.g. Panadol Extra" required
+                        type="text"
+                        name="medicine_Name"
+                        value={medForm.medicine_Name}
+                        onChange={handleMedChange}
+                        placeholder="e.g. Panadol Extra"
+                        required
                         className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm"
                       />
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-primary-text px-1 uppercase">Selling Price</label>
+                      <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                        Selling Price
+                      </label>
                       <div className="relative">
-                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                        <DollarSign
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                          size={18}
+                        />
                         <input
-                          type="number" name="selling_Price" value={medForm.selling_Price}
-                          onChange={handleMedChange} placeholder="0.00" required
+                          type="number"
+                          name="selling_Price"
+                          value={medForm.selling_Price}
+                          onChange={handleMedChange}
+                          placeholder="0.00"
+                          required
                           className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm"
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-primary-text px-1 uppercase">Cost Price</label>
+                      <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                        Cost Price
+                      </label>
                       <div className="relative">
-                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                        <DollarSign
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                          size={18}
+                        />
                         <input
-                          type="number" name="cost_Price" value={medForm.cost_Price}
-                          onChange={handleMedChange} placeholder="0.00" required
+                          type="number"
+                          name="cost_Price"
+                          value={medForm.cost_Price}
+                          onChange={handleMedChange}
+                          placeholder="0.00"
+                          required
                           className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm"
                         />
                       </div>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-primary-text px-1 uppercase">Batch No</label>
+                      <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                        Batch No
+                      </label>
                       <div className="relative">
-                        <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                        <Hash
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                          size={18}
+                        />
                         <input
-                          type="text" name="batch_No" value={medForm.batch_No}
-                          onChange={handleMedChange} placeholder="e.g. B001" required
+                          type="text"
+                          name="batch_No"
+                          value={medForm.batch_No}
+                          onChange={handleMedChange}
+                          placeholder="e.g. B001"
+                          required
                           className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm"
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-primary-text px-1 uppercase">Quantity</label>
+                      <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                        Quantity
+                      </label>
                       <div className="relative">
-                        <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                        <Layers
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                          size={18}
+                        />
                         <input
-                          type="number" name="quantity_In_Stock" value={medForm.quantity_In_Stock}
-                          onChange={handleMedChange} placeholder="0" required
+                          type="number"
+                          name="quantity_In_Stock"
+                          value={medForm.quantity_In_Stock}
+                          onChange={handleMedChange}
+                          placeholder="0"
+                          required
                           className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm"
                         />
                       </div>
                     </div>
                   </div>
-
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-primary-text px-1 uppercase">Expiry Date</label>
+                    <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                      Expiry Date
+                    </label>
                     <div className="relative">
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                      <Calendar
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                        size={18}
+                      />
                       <input
-                        type="date" name="expiry_Date" value={medForm.expiry_Date}
-                        onChange={handleMedChange} required
+                        type="date"
+                        name="expiry_Date"
+                        value={medForm.expiry_Date}
+                        onChange={handleMedChange}
+                        required
                         className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm"
                       />
                     </div>
                   </div>
-
-                  {medError && <p className="text-darkred text-xs text-center font-medium">{medError}</p>}
-
+                  {medError && (
+                    <p className="text-darkred text-xs text-center font-medium">
+                      {medError}
+                    </p>
+                  )}
                   <div className="flex gap-4 mt-6">
-                    <button type="button" onClick={closeMedicineModal}
-                      className="flex-1 py-4 rounded-2xl font-bold text-muted-text hover:bg-background transition-colors">
+                    <button
+                      type="button"
+                      onClick={closeMedicineModal}
+                      className="flex-1 py-4 rounded-2xl font-bold text-muted-text hover:bg-background transition-colors"
+                    >
                       Cancel
                     </button>
-                    <button type="submit" disabled={medLoading}
-                      className="flex-1 py-4 bg-mintgreen text-inverse-text rounded-2xl font-bold shadow-lg hover:opacity-90 transition-all disabled:opacity-50">
+                    <button
+                      type="submit"
+                      disabled={medLoading}
+                      className="flex-1 py-4 bg-mintgreen text-inverse-text rounded-2xl font-bold shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
+                    >
                       {medLoading ? "Saving..." : "Save Product"}
                     </button>
                   </div>
@@ -284,10 +390,17 @@ const Topbar = () => {
             <div className="p-8">
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-2xl font-black text-primary-text tracking-tight">Create New Order</h2>
-                  <p className="text-xs text-muted-text mt-1">Select products and enter customer info</p>
+                  <h2 className="text-2xl font-black text-primary-text tracking-tight">
+                    Create New Order
+                  </h2>
+                  <p className="text-xs text-muted-text mt-1">
+                    Select products and enter customer info
+                  </p>
                 </div>
-                <button onClick={closeOrderModal} className="p-2 hover:bg-background rounded-full transition-colors">
+                <button
+                  onClick={closeOrderModal}
+                  className="p-2 hover:bg-background rounded-full transition-colors"
+                >
                   <X size={20} className="text-muted-text" />
                 </button>
               </div>
@@ -297,25 +410,34 @@ const Topbar = () => {
                   <div className="w-16 h-16 bg-mintgreen/10 rounded-full flex items-center justify-center">
                     <span className="text-3xl text-mintgreen">✓</span>
                   </div>
-                  <p className="text-lg font-black text-primary-text">Order Created!</p>
-                  <p className="text-xs text-muted-text">Closing automatically...</p>
+                  <p className="text-lg font-black text-primary-text">
+                    Order Created!
+                  </p>
+                  <p className="text-xs text-muted-text">
+                    Closing automatically...
+                  </p>
                 </div>
               ) : (
                 <form className="space-y-5" onSubmit={handleOrderSubmit}>
-
-                  {/* Client Select */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-primary-text px-1 uppercase">Customer</label>
+                    <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                      Customer
+                    </label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                      <User
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                        size={18}
+                      />
                       <select
-                        name="client_ID" value={orderForm.client_ID}
-                        onChange={handleOrderChange} required
+                        name="client_ID"
+                        value={orderForm.client_ID}
+                        onChange={handleOrderChange}
+                        required
                         className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm appearance-none"
                       >
                         <option value="">Select customer...</option>
                         {clients.map((c: any) => (
-                          <option key={c.client_ID} value={c.client_ID}>
+                          <option key={c.id} value={c.id}>
                             {c.client_Name}
                           </option>
                         ))}
@@ -323,14 +445,20 @@ const Topbar = () => {
                     </div>
                   </div>
 
-                  {/* Medicine Select */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-primary-text px-1 uppercase">Medicine</label>
+                    <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                      Medicine
+                    </label>
                     <div className="relative">
-                      <Package className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                      <Package
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                        size={18}
+                      />
                       <select
-                        name="medicine_ID" value={orderForm.medicine_ID}
-                        onChange={handleOrderChange} required
+                        name="medicine_ID"
+                        value={orderForm.medicine_ID}
+                        onChange={handleOrderChange}
+                        required
                         className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm appearance-none"
                       >
                         <option value="">Select medicine...</option>
@@ -345,26 +473,62 @@ const Topbar = () => {
 
                   {/* Quantity */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-primary-text px-1 uppercase">Quantity</label>
+                    <label className="text-xs font-bold text-primary-text px-1 uppercase">
+                      Quantity
+                      {orderForm.medicine_ID && (
+                        <span className="ml-2 text-muted-text normal-case font-normal">
+                          (Available:{" "}
+                          {medicines.find(
+                            (m: any) =>
+                              m.medicine_ID === parseInt(orderForm.medicine_ID),
+                          )?.quantity_In_Stock ?? 0}
+                          )
+                        </span>
+                      )}
+                    </label>
                     <div className="relative">
-                      <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text" size={18} />
+                      <Layers
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-text"
+                        size={18}
+                      />
                       <input
-                        type="number" name="quantity" value={orderForm.quantity}
-                        onChange={handleOrderChange} placeholder="1" min="1" required
+                        type="number"
+                        name="quantity"
+                        value={orderForm.quantity}
+                        onChange={handleOrderChange}
+                        placeholder="1"
+                        min="1"
+                        max={
+                          medicines.find(
+                            (m: any) =>
+                              m.medicine_ID === parseInt(orderForm.medicine_ID),
+                          )?.quantity_In_Stock ?? undefined
+                        }
+                        required
                         className="w-full pl-12 pr-4 py-4 bg-background text-primary-text rounded-2xl outline-none border border-gray-200 dark:border-gray-700 focus:border-mintgreen transition-all text-sm"
                       />
                     </div>
                   </div>
 
-                  {orderError && <p className="text-darkred text-xs text-center font-medium">{orderError}</p>}
+                  {orderError && (
+                    <p className="text-darkred text-xs text-center font-medium">
+                      {orderError}
+                    </p>
+                  )}
 
                   <div className="flex gap-4 mt-6">
-                    <button type="button" onClick={closeOrderModal}
-                      className="flex-1 py-4 rounded-2xl font-bold text-muted-text hover:bg-background transition-colors">
+                    <button
+                      type="button"
+                      onClick={closeOrderModal}
+                      className="flex-1 py-4 rounded-2xl font-bold text-muted-text hover:bg-background transition-colors"
+                    >
                       Cancel
                     </button>
-                    <button type="submit" disabled={orderLoading}
-                      className="flex-1 py-4 bg-mintgreen text-inverse-text rounded-2xl font-bold shadow-lg hover:opacity-90 transition-all disabled:opacity-50">
+                    <button
+                      type="submit"
+                      disabled={orderLoading}
+                      className="flex-1 py-4 bg-mintgreen text-inverse-text rounded-2xl font-bold shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
+                    >
                       {orderLoading ? "Creating..." : "Complete Order"}
                     </button>
                   </div>
