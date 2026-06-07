@@ -78,7 +78,7 @@ export default function SalesReport() {
           },
           {
             title: "New Customer",
-            value: "1000", // static
+            value: "16", // static
             change: "+22%", // static
             icon: Users,
             color: "text-purple-500",
